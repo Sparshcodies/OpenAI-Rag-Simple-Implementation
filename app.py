@@ -2,16 +2,13 @@ import uuid
 import os
 import base64
 import streamlit as st
-from query_engine import QueryEngine
-from utils.vector_utils import VectorStore
+from query_engine import engine
+from utils.vector_utils import store
 from utils.docs_utils import extract_pdf_text, extract_txt_text, extract_csv_text, extract_docx_text, chunk_text
 from utils.uploads_utils import add_document, get_documents, delete_document
 from utils.logging_utils import log_error
 
 st.set_page_config(page_title="Local GPT RAG Assistant")
-
-store = VectorStore()
-engine = QueryEngine()
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -103,7 +100,7 @@ if st.button("Search"):
             st.write(res["answer"])
 
             if res["sources"]:
-                st.subheader("Sources")
+                st.subheader("Reference Sources")
             for s in res["sources"]:
                 chunk_id = s["id"]
                 similarity = s["similarity"]

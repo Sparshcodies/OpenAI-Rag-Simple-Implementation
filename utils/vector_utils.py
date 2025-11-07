@@ -71,3 +71,5 @@ class VectorStore:
                 self.col.delete(ids=ids_to_delete)
         except Exception as e:
             log_error(f"Delete by filename failed: {str(e)}")
+            
+store = VectorStore()

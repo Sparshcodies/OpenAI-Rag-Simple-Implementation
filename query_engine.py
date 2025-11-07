@@ -32,7 +32,7 @@ class QueryEngine:
             print("🔍 DEBUG >> hits:", hits)
             if not hits or hits[0][1] < threshold:
                 log_error("No relevant context found for the query.")
-                return {"answer": "I don't have enough information in the uploaded documents.", "sources": []}
+                return {"answer": "I don’t know based on the provided documents.", "sources": []}
 
             context = "\n\n".join([h[2] for h in hits])
             if not self.client:
@@ -42,7 +42,7 @@ class QueryEngine:
 
             prompt = f"""
             You answer strictly from the context below. If the answer is not fully present, reply only:
-            "I don't have enough information in the uploaded documents."
+            "I don’t know based on the provided documents."
 
             Context:
             {context}
@@ -54,11 +54,6 @@ class QueryEngine:
 
             # ------------------- OPENAI -------------------
             if self.provider == "openai":
-                if not self.client:
-                    answer = hits[0][2]
-                    log_error("OpenAI key missing. Returning top chunk.")
-                    return {"answer": answer, "sources": [{"id": h[0], "similarity": h[1]} for h in hits]}
-
                 res = self.client.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
@@ -68,10 +63,6 @@ class QueryEngine:
 
             # ------------------- GEMINI -------------------
             elif self.provider == "gemini":
-                if not self.client:
-                    answer = hits[0][2]
-                    log_error("Gemini key missing. Returning top chunk.")
-                    return {"answer": answer, "sources": [{"id": h[0], "similarity": h[1]} for h in hits]}
                 res = self.client.models.generate_content(
                     model=self.model, contents=prompt
                 )
@@ -83,3 +74,5 @@ class QueryEngine:
         except Exception as e:
             log_error(f"Error in ask(): {str(e)}")
             return {"answer": "An internal error occurred while processing the query.", "sources": []}
+        
+engine = QueryEngine()
