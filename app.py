@@ -16,8 +16,11 @@ engine = QueryEngine()
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-if "already_processed" not in st.session_state:
-    st.session_state.already_processed = False
+if "processed_files" not in st.session_state:
+    st.session_state.processed_files = set()
+    
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
 st.title("📄 Local GPT RAG Assistant")
 st.subheader("Upload → Index → Ask Questions")
@@ -26,39 +29,44 @@ uploaded_files = st.file_uploader(
     "Upload documents",
     type=["pdf","docx","txt","csv"],
     accept_multiple_files=True,
-    key="file_uploader"
+    key=f"file_uploader_{st.session_state.uploader_key}"
 )
-if uploaded_files and not st.session_state.already_processed:
-    with st.spinner("Indexing uploaded documents..."):
-        for file in uploaded_files:
-            try:
-                raw = file.getvalue()
-                ext = file.name.lower()
 
-                save_path = os.path.join(UPLOAD_DIR, file.name)
-                with open(save_path, "wb") as f:
-                    f.write(raw)
+if uploaded_files:
+    current_file_ids = {f"{file.name}_{file.size}" for file in uploaded_files}
+    new_files = [file for file in uploaded_files if f"{file.name}_{file.size}" not in st.session_state.processed_files]
+    
+    if new_files:
+        with st.spinner("Indexing uploaded documents..."):
+            for file in new_files:
+                try:
+                    raw = file.getvalue()
+                    ext = file.name.lower()
 
-                if ext.endswith(".pdf"):
-                    text = extract_pdf_text(raw)
-                elif ext.endswith(".docx"):
-                    text = extract_docx_text(raw)
-                elif ext.endswith(".csv"):
-                    text = extract_csv_text(raw)
-                else:
-                    text = extract_txt_text(raw)
+                    save_path = os.path.join(UPLOAD_DIR, file.name)
+                    with open(save_path, "wb") as f:
+                        f.write(raw)
 
-                chunks = chunk_text(text)
-                ids = [str(uuid.uuid4()) for _ in chunks]
-                metas = [{"file": file.name, "chunk": i} for i in range(len(chunks))]
-                store.upsert(ids, chunks, metas)
+                    if ext.endswith(".pdf"):
+                        text = extract_pdf_text(raw)
+                    elif ext.endswith(".docx"):
+                        text = extract_docx_text(raw)
+                    elif ext.endswith(".csv"):
+                        text = extract_csv_text(raw)
+                    else:
+                        text = extract_txt_text(raw)
 
-                add_document(file.name, save_path)
-            except Exception as e:
-                log_error(f"Failed while indexing {file.name}: {str(e)}")
+                    chunks = chunk_text(text)
+                    ids = [str(uuid.uuid4()) for _ in chunks]
+                    metas = [{"file": file.name, "chunk": i} for i in range(len(chunks))]
+                    store.upsert(ids, chunks, metas)
 
-    st.session_state.already_processed = True
-    st.rerun()
+                    add_document(file.name, save_path)
+                    st.session_state.processed_files.add(f"{file.name}_{file.size}")
+                except Exception as e:
+                    log_error(f"Failed while indexing {file.name}: {str(e)}")
+        st.session_state.uploader_key += 1
+        st.rerun()
 
 docs = get_documents()
 if docs:
@@ -78,6 +86,7 @@ if docs:
             delete_document(doc["name"])
             store.delete_by_filename(doc["name"])
             os.remove(doc["path"])
+            st.session_state.processed_files = {f for f in st.session_state.processed_files if not f.startswith(doc['name'])}
             st.rerun()
 
 st.write("---")
@@ -99,7 +108,6 @@ if st.button("Search"):
                 chunk_id = s["id"]
                 similarity = s["similarity"]
 
-                # get chunk text from vector DB (already stored)
                 chunk_record = store.col.get(ids=[chunk_id])
                 chunk_text = chunk_record["documents"][0] if chunk_record and chunk_record["documents"] else ""
 

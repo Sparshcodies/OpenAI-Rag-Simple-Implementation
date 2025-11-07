@@ -71,7 +71,7 @@ def extract_txt_text(txt_bytes: bytes) -> str:
         log_error(f"TXT extraction failed: {str(e)}")
 
 
-def chunk_text(text: str, chunk_size: int = 500, overlap: int = 100) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 250, overlap: int = 50) -> List[str]:
     try:
         words = text.split()
         chunks = []

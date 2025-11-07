@@ -7,3 +7,4 @@ chromadb/
 uploads/
 chroma_db/
 logs/
+indexed_docs.json
