@@ -56,3 +56,17 @@ class VectorStore:
             return results
         except Exception as e:
             log_error(f"Search failed: {str(e)}")
+            
+    def delete_by_filename(self, file_name: str):
+        try:
+            all_docs = self.col.get()
+            ids_to_delete = []
+
+            for ids, metas in zip(all_docs["ids"], all_docs["metadatas"]):
+                if metas and metas.get("file") == file_name:
+                    ids_to_delete.append(ids)
+
+            if ids_to_delete:
+                self.col.delete(ids=ids_to_delete)
+        except Exception as e:
+            log_error(f"Delete by filename failed: {str(e)}")

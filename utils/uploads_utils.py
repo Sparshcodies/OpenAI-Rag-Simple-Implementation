@@ -48,3 +48,12 @@ def clear_documents():
         _save([])
     except Exception as e:
         log_error(f"Failed clearing docs: {str(e)}")
+
+def delete_document(name: str):
+    try:
+        docs = _load()
+        docs = [d for d in docs if d["name"] != name]
+        _save(docs)
+    except Exception as e:
+        log_error(f"Failed deleting document: {str(e)}")
+

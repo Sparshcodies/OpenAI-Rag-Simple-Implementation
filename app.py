@@ -7,7 +7,7 @@ import streamlit as st
 from query_engine import QueryEngine
 from utils.vector_utils import VectorStore
 from utils.docs_utils import extract_pdf_text, extract_txt_text, extract_csv_text, extract_docx_text, chunk_text
-from utils.uploads_utils import add_document, get_documents
+from utils.uploads_utils import add_document, get_documents, delete_document
 from utils.logging_utils import log_error
 
 
@@ -71,7 +71,7 @@ if docs:
     st.write("#### Indexed Documents History")
 
     for doc in docs:
-        col1, col2, col3 = st.columns([4, 3, 2])
+        col1, col2, col3, col4 = st.columns([4, 3, 2, 1])
         col1.write(doc["name"])
         col2.write(doc["created_at"])
 
@@ -79,6 +79,13 @@ if docs:
             b64 = base64.b64encode(f.read()).decode()
             download_link = f'<a href="data:application/octet-stream;base64,{b64}" download="{doc["name"]}">Download</a>'
             col3.markdown(download_link, unsafe_allow_html=True)
+            
+        delete = col4.button("Delete", key=f"delete-{doc['name']}")
+        if delete:
+            delete_document(doc["name"])
+            store.delete_by_filename(doc["name"])
+            os.remove(doc["path"])
+            st.rerun()
 
 
 st.write("---")
