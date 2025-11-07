@@ -1,8 +1,9 @@
 chromadb
-torch==2.8.0
+torch==2.7.1
 sentence-transformers
 streamlit
 pypdf
 python-dotenv
 python-docx
 openai
+google-genai

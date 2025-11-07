@@ -51,8 +51,9 @@ class VectorStore:
             docs = r.get("documents", [[]])[0]
             metas = r.get("metadatas", [[]])[0]
             dists = r.get("distances", [[]])[0]
+            
 
-            results = [(i, float(1.0 - d), doc, meta) for i, d, doc, meta in zip(ids, dists, docs, metas)]
+            results = [(i, max(0, min(1, float(1 - d))), doc, meta) for i, d, doc, meta in zip(ids, dists, docs, metas)]
             return results
         except Exception as e:
             log_error(f"Search failed: {str(e)}")
