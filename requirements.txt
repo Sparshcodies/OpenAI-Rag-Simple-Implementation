@@ -1,4 +1,5 @@
 chromadb
+torch==2.8.0
 sentence-transformers
 streamlit
 pypdf
